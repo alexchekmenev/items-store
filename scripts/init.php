@@ -15,7 +15,7 @@ $config = json_decode($config_file_content);
 /* connects to db */
 $pdo = new PDO($config->mysql->db_uri, $config->mysql->db_user, $config->mysql->db_pass);
 $pdo->exec("SET NAMES utf8;");
-$pdo->exec("TRUNCATE items;");
+//$pdo->exec("TRUNCATE items;");
 
 $cache = new Memcached();
 $cache->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
@@ -50,6 +50,8 @@ function init_cache() {
     global $cache;
     global $pdo;
 
+    ini_set("memory_limit", "1800M");
+
     $start = microtime(true);
 
     $rows = $pdo
@@ -63,6 +65,8 @@ function init_cache() {
         }
         $str .= $rows[$i]->id . '|' . $rows[$i]->price;
     }
+
+    //echo "str length = ".strlen($str)."$str";
 
     $cache->set(STATE_VERSION, 0);
     $cache->set(STATE.'0', $str);
@@ -78,7 +82,7 @@ function init_oplog() {
     $cache->set(OPLOG, '');
 }
 
-init_db();
+//init_db();
 
 init_cache();
 

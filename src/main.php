@@ -1,3 +1,4 @@
+<pre>
 <?php
 /**
  * Created by PhpStorm.
@@ -27,16 +28,19 @@ function items_get($offset, $count) {
 
     $ids = [];
     if (count($oplog) > 0) {
-        $new_state = _merge_state_and_oplog();
+        $new_state = &_merge_state_and_oplog();
         //save_state(1, $new_state);
         for($i = $offset * 2; $i < ($offset + $count) * 2; $i += 2) {
             $ids[] = $new_state[$i];
         }
     } else {
         for($i = $offset * 2; $i < ($offset + $count) * 2; $i += 2) {
+            echo "$i: $state[$i]\n";
             $ids[] = $state[$i];
         }
     }
+
+    print_r($ids);
 
     $response = _get_items_by_ids($ids);
 
@@ -52,19 +56,19 @@ function items_update($id, $item) {
     $start = microtime(true);
 
     $item->id = $id;
-    $old_item = _update_item_in_db($item);
+    //$old_item = _update_item_in_db($item);
 
-    if ($old_item->price != $item->price) {
+    //if ($old_item->price != $item->price) {
         add_to_oplog((object)[
             "id" => $id,
             "price" => $item->price,
             "t" => intval($start * 1000),
             "action" => "update"
         ]);
-    }
+    //}
 
     $time_elapsed_secs = microtime(true) - $start;
-    echo '<- update_items: ' . $time_elapsed_secs * 1000 . "\n";
+    //echo '<- update_items: ' . $time_elapsed_secs * 1000 . "\n";
 }
 
 function items_add($item) {
@@ -115,7 +119,7 @@ function _get_items_by_ids($ids) {
     return $rows;
 }
 
-function _merge_state_and_oplog() {
+function &_merge_state_and_oplog() {
     global $state;
     global $oplog;
 
@@ -146,48 +150,135 @@ function _merge_state_and_oplog() {
         }
         $i = $ptr;
     }
+    //$temp = $unique;
 
     /* order by price */
     usort($unique, "_cmp2");
 
     /* create map */
-    $map = [];
-    $unique_len = count($unique);
-    for($i = 0; $i < $unique_len; $i++) {
-        $map[$unique[$i]->id] = true;
-    }
 
     $state_len = count($state);
-    $new_state = [];
-    for($i = 0, $j = 0; $i < $state_len || $j < $unique_len; ) {
-        /*if ($i < 10 && $j < 10) {
-            echo "i: $i, j: $j\n";
-        } else {
-            break;
-        }*/
+    $unique_len = count($unique);
+    $new_state_len = $state_len;
+    $map = [];
+    for($i = 0; $i < $unique_len; $i++) {
+        $map[$unique[$i]->id] = true;
+        if ($unique[$i]->action == 'add') {
+            $new_state_len += 2;
+        }
+        if ($unique[$i]->action == 'remove') {
+            $new_state_len -= 2;
+        }
+        //$new_state_len += 2;
+    }
 
-        if ($i < $state_len && isset($map[$state[$i]])) {
+    $unique_light = [];
+    $count = 0;
+    for($i = 0; $i < $unique_len; $i++) {
+        if ($unique[$i]->action != 'remove') {
+            $count += 2;
+            $unique_light[] = $unique[$i]->id;
+            $unique_light[] = $unique[$i]->price;
+        }
+    }
+
+//    $count = 0;
+//    $j = 0;
+//    for($i = 0; $i < $state_len; $i += 2) {
+//        if ($j >= $unique_len) {
+//            $count += 2;
+//            continue;
+//        }
+//        $t = 1;
+//        $v = 1;
+//        if ($v <= $t && $v >= $t) {
+//            //$new_state[$pos] = $state[$i];
+//            //$new_state[$pos + 1] = $state[$i + 1];
+//            $count += 1;
+//            $count += 1;
+//            //echo "from state\n";
+//        } else {
+//            //$new_state[$pos] = $unique[$j]->id;
+//            //$new_state[$pos + 1] = $unique[$j]->price;
+//            $count += 2;
+//            $count += 2;
+//            //echo "from oplog\n";
+//        }
+//    }
+
+    $time_elapsed_secs = microtime(true) - $start;
+    echo '  _count: ' . $time_elapsed_secs * 1000 . "\n";
+
+    $pos = 0;
+    $new_state = new SplFixedArray($new_state_len);
+
+    $start = microtime(true);
+    $j = 0;
+    for($i = 0; $i + 1 < $state_len; ) {
+//        if ($pos % 200000 == 0 && $pos != 0) {
+//            $time_elapsed_secs = microtime(true) - $start;
+//            echo '  _iter: ' . $time_elapsed_secs * 1000 . "\n";
+//            $start = microtime(true);
+//        }
+//        if ($i < 100 && $j < 100) {
+//            echo "i: $i, j: $j\n";
+//        } else {
+//            break;
+//        }
+        if (isset($map[$state[$i]])) {
             $i += 2;
             //echo "in map\n";
             continue;
-        }
-        if ($j < $unique_len && $unique[$j]->action == "remove") {
-            $j++;
-            //echo "removed\n";
-            continue;
-        }
-        if ($j >= $unique_len || $state[$i + 1] <= $unique[$j]->price) {
-            $new_state[] = $state[$i];
-            $new_state[] = $state[$i + 1];
+        } else if ($j >= $unique_len || $state[$i + 1] <= $unique_light[$j + 1]) {
+            $new_state[$pos] = $state[$i];
+            $new_state[$pos + 1] = $state[$i + 1];
             $i += 2;
+            $pos += 2;
             //echo "from state\n";
         } else {
-            $new_state[] = $unique[$j]->id;
-            $new_state[] = $unique[$j]->price;
-            $j++;
+            $new_state[$pos] = $unique_light[$j];
+            $new_state[$pos + 1] = $unique_light[$j + 1];
+            $j += 2;
+            $pos += 2;
             //echo "from oplog\n";
         }
+
+//        if ($i + 1 < $state_len) {
+//
+//        } else {
+//            $new_state[$pos] = $unique_light[$j];
+//            $new_state[$pos + 1] = $unique_light[$j + 1];
+//            $j += 2;
+//            $pos += 2;
+//            //echo "from oplog\n";
+//        }
+
+//        if ($j < $unique_len && $unique[$j]->action == "remove") {
+//            $j++;
+//            //echo "removed\n";
+//            continue;
+//        }
+//        if ($i + 1 < $state_len && ()) { // $unique[$j]->price) {
+//
+//        } else {
+//            $new_state[] = $unique_light[$j];
+//            $new_state[] = $unique_light[$j + 1];
+//            $j += 2;
+//            //$pos += 2;
+//            //echo "from oplog\n";
+//        }
+
     }
+
+    while($j < $count) {
+        $new_state[$pos] = $unique_light[$j];
+        $new_state[$pos + 1] = $unique_light[$j + 1];
+        $j += 2;
+        $pos += 2;
+        //echo "from oplog\n";
+    }
+
+    echo "new_state_len = $new_state_len, pos = $pos\n";
 
     //echo "oplog: \n";
     //print_r($oplog);
@@ -231,6 +322,20 @@ function _cmp2($a, $b) {
     }
 }
 
+function contains(&$arr, $id) {
+    $l = 0;
+    $r = count($arr);
+    while($l < $r) {
+        $m = ($l + $r) / 2;
+        if ($arr[$m]->id < $id) {
+            $l = $m + 1;
+        } else {
+            $r = $m;
+        }
+    }
+    return ($l < count($arr) && $arr[$l]->id == $id);
+}
+
 function _update_item_in_db(&$item) {
     global $pdo;
 
@@ -261,7 +366,7 @@ function _update_item_in_db(&$item) {
     }
 
     $query = $query1 . ($query2_has_columns ? $query2 . " WHERE id=$item->id;" : '');
-    echo "query = " . $query . "\n";
+    //echo "query = " . $query . "\n";
 
     $response = $pdo->query($query)->fetch(PDO::FETCH_OBJ);
     if ($pdo->errorCode() != PDO::ERR_NONE) {
@@ -285,3 +390,5 @@ function _remove_item_from_db($id) {
     echo $query . "\n";
     $pdo->exec($query);
 }
+?>
+    </pre>

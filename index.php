@@ -6,6 +6,8 @@
  * Time: 18:00
  */
 
+$start = microtime(true);
+
 include_once "src/main.php";
 
 /* initializes $config */
@@ -21,35 +23,44 @@ $cache->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
 //$cache->setOption(Memcached::OPT_COMPRESSION, false);
 $cache->addServer('localhost', 11211);
 
+$time_elapsed_secs = microtime(true) - $start;
+echo 'total: ' . $time_elapsed_secs * 1000 . "\n";
+
 $state = [];
 $oplog = [];
 //$cache->set(OPLOG, '');
 
 $item = (object)[
-    "price" => 1.99,
+    "price" => random_int(1, 1000000),
     "description" => "It's a new description",
     "name" => "Lolkaaaaa"
 ];
 
-$first_page = items_get(0, 30);
-//print_r($first_page);
 
-//items_update($first_page[0]->id, $item);
+
+//print_r($_GET);
+
+$first_page = items_get(0, 30);
+print_r($first_page);
+
+//items_update(1, $item);
 //items_remove($first_page[1]->id);
 //items_remove($first_page[3]->id);
 //items_remove($first_page[5]->id);
 //items_remove($first_page[7]->id);
 //items_remove($first_page[9]->id);
 
-//$start = microtime(true);
-//
-//for($i = 1000; $i < 2000; $i++) {
+
+
+//for($i = 0; $i < 1001; $i++) {
+//    items_update(1, $item);
 //    items_add((object)[
-//        "price" => 0.5 + ($i * 1.0) / 1000,
+//        "price" => 1000.5 + ($i * 1.0) / 1000,
 //        "name" => "Inserted$i",
 //        "description" => "Empty description$i"
 //    ]);
 //}
-//
-//$time_elapsed_secs = microtime(true) - $start;
-//echo 'insertion: ' . $time_elapsed_secs * 1000 . "\n";
+
+
+$time_elapsed_secs = microtime(true) - $start;
+echo 'total: ' . $time_elapsed_secs * 1000 . "\n";

@@ -31,7 +31,7 @@ function get_state() {
     }
 
     $time_elapsed_secs = microtime(true) - $start;
-    echo 'get_state: ' . $time_elapsed_secs * 1000 . "\n";
+    echo '  get_state: ' . $time_elapsed_secs * 1000 . "\n";
 }
 
 function save_state($state_version, &$new_state) {
@@ -53,5 +53,5 @@ function save_state($state_version, &$new_state) {
     $cache->set(STATE.$state_version, $str, 2*60);
 
     $time_elapsed_secs = microtime(true) - $start;
-    echo 'save_state: ' . $time_elapsed_secs * 1000 . "\n";
+    echo '  save_state: ' . $time_elapsed_secs * 1000 . "\n";
 }

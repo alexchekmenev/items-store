@@ -15,16 +15,13 @@ $config_file_content = file_get_contents('./config.json');
 $config = json_decode($config_file_content);
 
 /* connects to db */
-$pdo = new PDO($config->mysql->db_uri, $config->mysql->db_user, $config->mysql->db_pass);
-$pdo->exec("SET NAMES utf8;");
+//$pdo = new PDO($config->mysql->db_uri, $config->mysql->db_user, $config->mysql->db_pass);
+//$pdo->exec("SET NAMES utf8;");
 
 $cache = new Memcached();
 $cache->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
 //$cache->setOption(Memcached::OPT_COMPRESSION, false);
 $cache->addServer('localhost', 11211);
-
-$time_elapsed_secs = microtime(true) - $start;
-echo 'total: ' . $time_elapsed_secs * 1000 . "\n";
 
 $state = [];
 $oplog = [];
@@ -36,12 +33,8 @@ $item = (object)[
     "name" => "Lolkaaaaa"
 ];
 
-
-
-//print_r($_GET);
-
 $first_page = items_get(0, 30);
-print_r($first_page);
+//print_r($first_page);
 
 //items_update(1, $item);
 //items_remove($first_page[1]->id);
@@ -49,8 +42,6 @@ print_r($first_page);
 //items_remove($first_page[5]->id);
 //items_remove($first_page[7]->id);
 //items_remove($first_page[9]->id);
-
-
 
 //for($i = 0; $i < 1001; $i++) {
 //    items_update(1, $item);
@@ -60,7 +51,6 @@ print_r($first_page);
 //        "description" => "Empty description$i"
 //    ]);
 //}
-
 
 $time_elapsed_secs = microtime(true) - $start;
 echo 'total: ' . $time_elapsed_secs * 1000 . "\n";

@@ -21,7 +21,7 @@ function get_state() {
 
     $state_version = 0;
 
-    echo "state_version = $state_version\n";
+    //echo "state_version = $state_version\n";
 
     $str = $cache->get(STATE.$state_version);
     if (strlen($str) == 0) {

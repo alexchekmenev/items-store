@@ -1,4 +1,3 @@
-<pre>
 <?php
 /**
  * Created by PhpStorm.
@@ -19,32 +18,28 @@ function items_get($offset, $count) {
     $start = microtime(true);
 
     get_state();
-    echo "state size = " . count($state) . "\n";
+    //echo "state size = " . count($state) . "\n";
 
     $oplog_version = 0;
     get_oplog($oplog_version);
-    echo "oplog size = " . count($oplog) . "\n";
-    echo "oplog version = " . $oplog_version . "\n";
+    //echo "oplog size = " . count($oplog) . "\n";
+    //echo "oplog version = " . $oplog_version . "\n";
 
     $ids = [];
     if (count($oplog) > 0) {
-        $new_state = &_merge_state_and_oplog();
+        $new_state = _merge_state_and_oplog();
         //save_state(1, $new_state);
         for($i = $offset * 2; $i < ($offset + $count) * 2; $i += 2) {
             $ids[] = $new_state[$i];
         }
     } else {
         for($i = $offset * 2; $i < ($offset + $count) * 2; $i += 2) {
-            echo "$i: $state[$i]\n";
             $ids[] = $state[$i];
         }
     }
 
-    print_r($ids);
-
-    $response = _get_items_by_ids($ids);
-
-    //print_r($ids);
+    //$response = _get_items_by_ids($ids);
+    $response = $ids;
 
     $time_elapsed_secs = microtime(true) - $start;
     echo '<- get_items: ' . $time_elapsed_secs * 1000 . "\n";
@@ -114,12 +109,12 @@ function _get_items_by_ids($ids) {
     $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
 
     $time_elapsed_secs = microtime(true) - $start;
-    echo '  _get_items_by_ids: ' . $time_elapsed_secs * 1000 . "\n";
+    //echo '  _get_items_by_ids: ' . $time_elapsed_secs * 1000 . "\n";
 
     return $rows;
 }
 
-function &_merge_state_and_oplog() {
+function _merge_state_and_oplog() {
     global $state;
     global $oplog;
 
@@ -207,12 +202,12 @@ function &_merge_state_and_oplog() {
 //    }
 
     $time_elapsed_secs = microtime(true) - $start;
-    echo '  _count: ' . $time_elapsed_secs * 1000 . "\n";
+    //echo '  _count: ' . $time_elapsed_secs * 1000 . "\n";
 
     $pos = 0;
     $new_state = new SplFixedArray($new_state_len);
 
-    $start = microtime(true);
+    //$start = microtime(true);
     $j = 0;
     for($i = 0; $i + 1 < $state_len; ) {
 //        if ($pos % 200000 == 0 && $pos != 0) {
@@ -278,7 +273,7 @@ function &_merge_state_and_oplog() {
         //echo "from oplog\n";
     }
 
-    echo "new_state_len = $new_state_len, pos = $pos\n";
+    //echo "new_state_len = $new_state_len, pos = $pos\n";
 
     //echo "oplog: \n";
     //print_r($oplog);
@@ -390,5 +385,3 @@ function _remove_item_from_db($id) {
     echo $query . "\n";
     $pdo->exec($query);
 }
-?>
-    </pre>
